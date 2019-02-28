@@ -16,7 +16,8 @@ API_URL = 'https://api.esv.org/v3/passage/html/'
 d = datetime.datetime.today()
 
 params = { 
-  'q': 'Proverbs %s' % d.day }
+  'q': 'Proverbs %s' % d.day
+}
 
 headers = {
   'Authorization': 'Token %s' % API_KEY 
