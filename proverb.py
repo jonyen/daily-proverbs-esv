@@ -9,7 +9,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from authentication import login, app_password, API_KEY
+from authentication import login, app_password, ESV_API_KEY
 
 API_URL = 'https://api.esv.org/v3/passage/html/'
 
@@ -20,7 +20,7 @@ params = {
 }
 
 headers = {
-  'Authorization': 'Token %s' % API_KEY 
+  'Authorization': 'Token %s' % ESV_API_KEY
 }
 
 data = requests.get(API_URL, params=params, headers=headers).json()
@@ -28,7 +28,7 @@ data = requests.get(API_URL, params=params, headers=headers).json()
 html = re.sub('\s+', ' ', data['passages'][0]).strip()
 
 me = "Daily Proverb - ESV"
-you = "jonyen@gmail.com"
+you = "jonathan.yen@gpmail.org"
 
 msg = MIMEMultipart('alternative')
 msg['Subject'] = "Proverbs %s" % d.day
