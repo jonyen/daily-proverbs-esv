@@ -7,6 +7,7 @@ import os
 
 API_URL = 'https://api.esv.org/v3/passage/text/'
 ESV_API_KEY = os.environ['ESV_API_KEY']
+SLACK_TOKEN = os.environ['SLACK_TOKEN']
 
 d = datetime.datetime.today()
 
@@ -22,7 +23,7 @@ data = requests.get(API_URL, params=params, headers=headers).json()
 
 text = data['passages'][0]
 
-client = slack.WebClient(token='xoxp-622141732785-627953923508-764652323395-65229b04d0fa6089a716b42938c5ea50')
+client = slack.WebClient(token=SLACK_TOKEN)
 
 response = client.chat_postMessage(
   channel='#dailyproverbs',
