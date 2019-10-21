@@ -2,16 +2,11 @@
 
 import requests
 import datetime
-import re
+import slack
+import os
 
-import smtplib
-
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
-from authentication import login, app_password, ESV_API_KEY
-
-API_URL = 'https://api.esv.org/v3/passage/html/'
+API_URL = 'https://api.esv.org/v3/passage/text/'
+ESV_API_KEY = os.environ['ESV_API_KEY']
 
 d = datetime.datetime.today()
 
@@ -20,24 +15,15 @@ params = {
 }
 
 headers = {
-  'Authorization': 'Token %s' % ESV_API_KEY
+  'Authorization': 'Token %s' % ESV_API_KEY 
 }
 
 data = requests.get(API_URL, params=params, headers=headers).json()
 
-html = re.sub('\s+', ' ', data['passages'][0]).strip()
+text = data['passages'][0]
 
-me = "Daily Proverb - ESV"
-you = "jonathan.yen@gpmail.org"
+client = slack.WebClient(token='xoxp-622141732785-627953923508-764652323395-65229b04d0fa6089a716b42938c5ea50')
 
-msg = MIMEMultipart('alternative')
-msg['Subject'] = "Proverbs %s" % d.day
-msg['From'] = me
-msg['To'] = you
-
-msg.attach(MIMEText(html.encode("utf-8"), 'html'))
-
-s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-s.login(login, app_password)
-s.sendmail(me, you, msg.as_string())
-s.quit()
+response = client.chat_postMessage(
+  channel='#dailyproverbs',
+  text=text) 
