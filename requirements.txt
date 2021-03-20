@@ -16,7 +16,7 @@ gspread==3.1.0
 httplib2==0.14.0
 idna==2.8
 itsdangerous==0.24
-Jinja2==2.10.1
+Jinja2==2.11.3
 jmespath==0.9.4
 MarkupSafe==0.23
 multidict==4.5.2
