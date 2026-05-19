@@ -14,7 +14,7 @@ docutils==0.21.2
 Flask==3.1.2
 gspread==6.1.4
 httplib2==0.23.0
-idna==3.10
+idna==3.15
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jmespath==1.0.1
