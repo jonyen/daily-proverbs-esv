@@ -1,0 +1,17 @@
+{
+  "name": "daily-proverbs-esv",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Posts the day's chapter of Proverbs from the ESV API to Slack — a scheduled Cloudflare Worker",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "wrangler": "^4.0.0"
+  }
+}
