@@ -250,6 +250,16 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       return "Proverbs " + day + ":" + range + " (ESV)";
     }
 
+    function dismissPill() {
+      pill.classList.remove("show");
+      pill.hidden = true;
+      pill._suppress = false;
+      if (pill._click) {
+        pill.removeEventListener("click", pill._click);
+        pill._click = null;
+      }
+    }
+
     function showPill(rect, nums) {
       pill.textContent = "Copy " + reference(nums);
       pill.className = "copy-pill";
@@ -258,19 +268,15 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       pill.style.left = x + "px";
       pill.style.top = rect.top + "px";
       if (rect.top < 150) pill.classList.add("below");
+      pill._suppress = true;
       requestAnimationFrame(() => pill.classList.add("show"));
-      const dismiss = () => {
-        pill.classList.remove("show");
-        pill.hidden = true;
-        pill.removeEventListener("click", pill._click);
-      };
       pill._click = async () => {
         const body = nums.map(wordText).filter(Boolean).join(" ");
         const text = reference(nums) + "\\n" + body;
         try {
           await navigator.clipboard.writeText(text);
           pill.textContent = "Copied";
-          setTimeout(dismiss, 900);
+          setTimeout(dismissPill, 900);
         } catch {
           const ta = document.createElement("textarea");
           ta.value = text;
@@ -281,14 +287,22 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
           document.execCommand("copy");
           ta.remove();
           pill.textContent = "Copied";
-          setTimeout(dismiss, 900);
+          setTimeout(dismissPill, 900);
         }
       };
       pill.addEventListener("click", pill._click);
-      setTimeout(dismiss, 6000);
+      setTimeout(dismissPill, 6000);
     }
 
     let dragging = false;
+
+    document.addEventListener("click", (e) => {
+      if (pill._suppress) {
+        pill._suppress = false;
+        return;
+      }
+      if (!pill.hidden && !pill.contains(e.target)) dismissPill();
+    });
 
     document.addEventListener("mousedown", (e) => {
       if (!section.contains(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
