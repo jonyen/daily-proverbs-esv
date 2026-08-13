@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 9;
+const RENDER_VERSION = 10;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -61,6 +61,16 @@ function renderText(text: string): string {
   return escapeHtml(text).replace(/\bLORD\b/g, '<span class="lord">Lord</span>');
 }
 
+function renderWords(text: string, startIndex: number): { html: string; count: number } {
+  const words = text.match(/\S+/g) ?? [];
+  return {
+    html: words
+      .map((word, i) => `<span class="w" data-w="${startIndex + i}">${renderText(word)}</span>`)
+      .join(" "),
+    count: words.length,
+  };
+}
+
 async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: string; copyright: string }> {
   const params = new URLSearchParams({
     q: `Proverbs ${chapter}`,
@@ -93,13 +103,16 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
   const title = `Proverbs ${chapter}`;
   const formatted = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
+  let wordIndex = 0;
   const versesHtml = verses
     .map((v) => {
       const lines = v.lines
         .map((line, i) => {
           const number = i === 0 ? `<span class="v">${v.number}&nbsp;</span>` : "";
           const cls = i === 0 ? "line" : "line indent";
-          return `      <p class="${cls}">${number}${renderText(line)}</p>`;
+          const { html, count } = renderWords(line, wordIndex);
+          wordIndex += count;
+          return `      <p class="${cls}">${number}${html}</p>`;
         })
         .join("\n");
       return `<div class="verse" data-number="${v.number}">\n${lines}\n    </div>`;
@@ -137,21 +150,24 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       column-rule: 1px solid var(--rule);
     }
     .verse { break-inside: avoid; }
-    .verse.hl { background: #fce9a8; box-shadow: 0 0 0 .18em #fce9a8; border-radius: .15em; }
+    .w.hl { background: #fce9a8; box-shadow: 0 .06em 0 .06em #fce9a8; border-radius: .12em; }
     .verses p { margin: 0; }
     .verses p.indent { padding-left: 1.3em; }
     .verses .v { font-size: .7em; color: var(--muted); }
     .verses .lord { font-variant: small-caps; }
     body.selecting ::selection { background: #fce9a8; color: var(--ink); }
     .copy-pill {
-      position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%);
+      position: fixed; z-index: 10;
+      transform: translate(-50%, calc(-100% - .6rem));
       background: var(--ink); color: var(--paper);
       font: inherit; font-size: .85rem; padding: .5rem 1rem; border-radius: 99px;
       border: none; cursor: pointer; box-shadow: 0 .35rem 1.25rem rgba(0,0,0,.22);
-      z-index: 10; opacity: 0; pointer-events: none; transition: opacity .18s ease;
+      opacity: 0; pointer-events: none; transition: opacity .18s ease;
     }
+    .copy-pill.below { transform: translate(-50%, .6rem); }
     .copy-pill.show { opacity: 1; pointer-events: auto; }
-    .copy-pill:active { transform: translateX(-50%) scale(.97); }
+    .copy-pill:active { transform: translate(-50%, calc(-100% - .6rem)) scale(.97); }
+    .copy-pill.below:active { transform: translate(-50%, .6rem) scale(.97); }
     footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
     .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .7rem; margin: .6rem 0 1.1rem; }
@@ -184,7 +200,7 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
   <button class="copy-pill" type="button" hidden>Copy selection</button>
   <script>
   (() => {
-    const STORE_KEY = "daily-proverbs-highlights";
+    const STORE_KEY = "daily-proverbs-highlights-v2";
     const day = document.querySelector("main").dataset.day;
     const section = document.querySelector(".verses");
     const pill = document.querySelector(".copy-pill");
@@ -192,49 +208,54 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch {}
 
-    const byNumber = new Map();
-    for (const el of section.querySelectorAll(".verse")) {
-      byNumber.set(Number(el.dataset.number), el);
+    const byWord = new Map();
+    for (const el of section.querySelectorAll(".w")) {
+      byWord.set(Number(el.dataset.w), el);
     }
 
     function load() {
       for (const n of saved[day] || []) {
-        const el = byNumber.get(Number(n));
+        const el = byWord.get(Number(n));
         if (el) el.classList.add("hl");
       }
     }
 
     function persist() {
-      saved[day] = [...byNumber.keys()].filter((n) => byNumber.get(n).classList.contains("hl"));
+      saved[day] = [...byWord.keys()].filter((n) => byWord.get(n).classList.contains("hl"));
       try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch {}
     }
 
-    function coveredVerseNumbers(range) {
-      const numbers = [];
-      for (const el of byNumber.values()) {
-        if (range.intersectsNode(el)) numbers.push(Number(el.dataset.number));
+    function coveredWords(range) {
+      const words = [];
+      for (const [n, el] of byWord) {
+        if (range.intersectsNode(el)) words.push(n);
       }
-      return numbers;
+      return words;
     }
 
-    function verseText(n) {
-      const el = byNumber.get(n);
-      return [...el.querySelectorAll("p")]
-        .map((p) => p.innerText.trim().replace(/\bLord\b/g, "LORD"))
-        .join("\\n")
-        .trim();
+    function wordText(n) {
+      return byWord.get(n).innerText.trim().replace(/\bLord\b/g, "LORD");
+    }
+
+    function verseOf(n) {
+      return Number(byWord.get(n).closest(".verse").dataset.number);
     }
 
     function reference(nums) {
-      const first = nums[0];
-      const last = nums[nums.length - 1];
+      const first = verseOf(nums[0]);
+      const last = verseOf(nums[nums.length - 1]);
       const range = first === last ? String(first) : first + "–" + last;
       return "Proverbs " + day + ":" + range + " (ESV)";
     }
 
-    function showPill(nums) {
+    function showPill(rect, nums) {
       pill.textContent = "Copy " + reference(nums);
+      pill.className = "copy-pill";
       pill.hidden = false;
+      const x = Math.min(Math.max(rect.left + rect.width / 2, 90), window.innerWidth - 90);
+      pill.style.left = x + "px";
+      pill.style.top = rect.top + "px";
+      if (rect.top < 150) pill.classList.add("below");
       requestAnimationFrame(() => pill.classList.add("show"));
       const dismiss = () => {
         pill.classList.remove("show");
@@ -242,7 +263,7 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
         pill.removeEventListener("click", pill._click);
       };
       pill._click = async () => {
-        const body = nums.map(verseText).filter(Boolean).join("\\n\\n");
+        const body = nums.map(wordText).filter(Boolean).join(" ");
         const text = reference(nums) + "\\n" + body;
         try {
           await navigator.clipboard.writeText(text);
@@ -281,16 +302,17 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       if (!sel || sel.isCollapsed) return;
       let range;
       try { range = sel.getRangeAt(0); } catch { return; }
+      const rect = range.getBoundingClientRect();
       sel.removeAllRanges();
       if (!section.contains(range.commonAncestorContainer)) return;
 
-      const nums = coveredVerseNumbers(range);
+      const nums = coveredWords(range);
       if (nums.length === 0) return;
 
-      const all = nums.every((n) => byNumber.get(n).classList.contains("hl"));
-      for (const n of nums) byNumber.get(n).classList.toggle("hl", !all);
+      const all = nums.every((n) => byWord.get(n).classList.contains("hl"));
+      for (const n of nums) byWord.get(n).classList.toggle("hl", !all);
       persist();
-      if (!all) showPill(nums);
+      if (!all) showPill(rect, nums);
     });
 
     load();
