@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 6;
+const RENDER_VERSION = 7;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -141,7 +141,7 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     .verses p { margin: 0; }
     .verses p.indent { padding-left: 1.3em; }
     .verses .v { font-size: .7em; color: var(--muted); }
-    .verses .lord { font-variant: small-caps; font-weight: 600; }
+    .verses .lord { font-variant: small-caps; }
     footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
     .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .7rem; margin: .6rem 0 1.1rem; }
