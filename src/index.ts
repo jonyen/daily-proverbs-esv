@@ -58,17 +58,22 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     :root { --ink: #2b2723; --paper: #faf7f0; --muted: #8a8378; --rule: #e3dccb; }
     * { box-sizing: border-box; }
     body {
-      margin: 0; padding: 3rem 1.25rem 4rem;
+      margin: 0; padding: 1.75rem 1.25rem 2.5rem;
       background: var(--paper); color: var(--ink);
-      font-family: Georgia, "Times New Roman", serif; line-height: 1.75;
+      font-family: Georgia, "Times New Roman", serif; line-height: 1.65;
     }
-    main { max-width: 42rem; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 2.5rem; }
+    main { max-width: 96rem; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 1.5rem; }
     h1 { font-size: 1.9rem; margin: 0 0 .4rem; letter-spacing: .01em; }
     .date { color: var(--muted); font-size: .95rem; font-style: italic; }
-    .rule { border: none; border-top: 1px solid var(--rule); margin: 1.75rem 0; }
-    .verses p { margin: 0 0 1rem; }
-    footer { margin-top: 3rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
+    .rule { border: none; border-top: 1px solid var(--rule); margin: 1.5rem 0; }
+    .verses {
+      column-width: 20rem;
+      column-gap: 2.5rem;
+      column-rule: 1px solid var(--rule);
+    }
+    .verses p { margin: 0 0 1rem; break-inside: avoid; }
+    footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
   </style>
 </head>
