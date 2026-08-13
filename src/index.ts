@@ -1,5 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
+const RENDER_VERSION = 3;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -150,7 +151,7 @@ export default {
     const requested = dayParam ? Number(dayParam) : today.getUTCDate();
     const chapter = clampChapter(Number.isFinite(requested) ? requested : today.getUTCDate());
 
-    const cacheKey = `https://daily-proverbs-esv/cache/${dateKey(today)}-${chapter}`;
+    const cacheKey = `https://daily-proverbs-esv/cache/${dateKey(today)}-${chapter}-v${RENDER_VERSION}`;
     const cache = caches.default;
     const cached = await cache.match(cacheKey);
     if (cached) {
