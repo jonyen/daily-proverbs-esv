@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 4;
+const RENDER_VERSION = 5;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -18,7 +18,7 @@ function dateKey(date: Date): string {
 
 interface Verse {
   number: number;
-  text: string;
+  lines: string[];
 }
 
 function parseVerses(passage: string): Verse[] {
@@ -31,9 +31,9 @@ function parseVerses(passage: string): Verse[] {
     const match = line.match(/^\[(\d+)\]\s*(.*)$/);
     if (match) {
       if (current) verses.push(current);
-      current = { number: Number(match[1]), text: match[2] };
+      current = { number: Number(match[1]), lines: [match[2]] };
     } else if (current) {
-      current.text += ` ${line}`;
+      current.lines.push(line);
     }
   }
   if (current) verses.push(current);
@@ -44,12 +44,21 @@ function parseVerses(passage: string): Verse[] {
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)
-      .map((text, i) => ({ number: i + 1, text }));
+      .map((text, i) => ({ number: i + 1, lines: [text] }));
   }
 
   const last = result[result.length - 1];
-  if (last) last.text = last.text.replace(/\s*\(ESV\)\s*$/, "").trim();
+  const lastLineIndex = last.lines.length - 1;
+  last.lines[lastLineIndex] = last.lines[lastLineIndex].replace(/\s*\(ESV\)\s*$/, "").trim();
   return result;
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderText(text: string): string {
+  return escapeHtml(text).replace(/\bLORD\b/g, '<span class="lord">Lord</span>');
 }
 
 async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: string; copyright: string }> {
@@ -84,7 +93,18 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
   const title = `Proverbs ${chapter}`;
   const formatted = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
-  const versesHtml = verses.map((v) => `<p><sup>${v.number}</sup> ${v.text}</p>`).join("\n      ");
+  const versesHtml = verses
+    .map((v) => {
+      const lines = v.lines
+        .map((line, i) => {
+          const number = i === 0 ? `<span class="v">${v.number}&nbsp;</span>` : "";
+          const cls = i === 0 ? "line" : "line indent";
+          return `      <p class="${cls}">${number}${renderText(line)}</p>`;
+        })
+        .join("\n");
+      return `<div class="verse">\n${lines}\n    </div>`;
+    })
+    .join("\n      ");
   const currentDay = date.getUTCDate();
   const dayLinks = Array.from({ length: 31 }, (_, i) => {
     const day = i + 1;
@@ -117,8 +137,11 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       column-gap: 2.5rem;
       column-rule: 1px solid var(--rule);
     }
-    .verses p { margin: 0 0 1rem; break-inside: avoid; }
-    .verses sup { font-size: .7em; color: var(--muted); padding-right: .15em; }
+    .verse { break-inside: avoid; }
+    .verses p { margin: 0; }
+    .verses p.indent { padding-left: 1.3em; }
+    .verses .v { font-size: .7em; color: var(--muted); }
+    .verses .lord { font-variant: small-caps; font-weight: 600; }
     footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
     .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .7rem; margin: .6rem 0 1.1rem; }
