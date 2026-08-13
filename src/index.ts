@@ -1,5 +1,7 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
+const ESV_ATTRIBUTION =
+  "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
 interface AppEnv extends Env {
   ESV_API_KEY: string;
@@ -13,6 +15,37 @@ function dateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+interface Verse {
+  number: number;
+  text: string;
+}
+
+function parseVerses(passage: string): Verse[] {
+  const verses: Verse[] = [];
+  let current: Verse | null = null;
+
+  for (const rawLine of passage.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const match = line.match(/^\[(\d+)\]\s*(.*)$/);
+    if (match) {
+      if (current) verses.push(current);
+      current = { number: Number(match[1]), text: match[2] };
+    } else if (current) {
+      current.text += ` ${line}`;
+    }
+  }
+  if (current) verses.push(current);
+
+  return verses.length > 0
+    ? verses
+    : passage
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((text, i) => ({ number: i + 1, text }));
+}
+
 async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: string; copyright: string }> {
   const params = new URLSearchParams({
     q: `Proverbs ${chapter}`,
@@ -20,6 +53,7 @@ async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: strin
     "include-passage-references": "false",
     "include-short-copyright": "true",
     "include-headings": "false",
+    "include-verse-numbers": "true",
   });
 
   const response = await fetch(`${ESV_API_URL}?${params}`, {
@@ -39,13 +73,15 @@ async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: strin
 }
 
 function renderPage(chapter: number, date: Date, passage: string, copyright: string): string {
-  const verses = passage
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const verses = parseVerses(passage);
 
   const title = `Proverbs ${chapter}`;
   const formatted = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+
+  const versesHtml = verses.map((v) => `<p><sup>${v.number}</sup> ${v.text}</p>`).join("\n      ");
+  const verseLinks = verses
+    .map((v) => `<a href="https://www.esv.org/Proverbs+${chapter}:${v.number}/">${v.number}</a>`)
+    .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -73,8 +109,13 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       column-rule: 1px solid var(--rule);
     }
     .verses p { margin: 0 0 1rem; break-inside: avoid; }
+    .verses sup { font-size: .7em; color: var(--muted); padding-right: .15em; }
     footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
+    .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .1rem .65rem; margin: .5rem 0 1.1rem; }
+    .verse-links a { color: var(--muted); text-decoration: none; font-variant-numeric: tabular-nums; }
+    .verse-links a:hover { color: var(--ink); text-decoration: underline; }
+    .esv-link a { color: var(--ink); }
   </style>
 </head>
 <body>
@@ -85,12 +126,16 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     </header>
     <hr class="rule">
     <section class="verses">
-      ${verses.map((verse) => `<p>${verse}</p>`).join("\n      ")}
+      ${versesHtml}
     </section>
     <hr class="rule">
     <footer>
       <div>Daily Proverbs — a chapter a day</div>
-      ${copyright ? `<div class="copyright">${copyright}</div>` : ""}
+      <nav class="verse-links" aria-label="Verses">
+        ${verseLinks}
+      </nav>
+      <div class="copyright">${copyright || ESV_ATTRIBUTION}</div>
+      <div class="esv-link">Read the <a href="https://www.esv.org/">ESV</a> at esv.org</div>
     </footer>
   </main>
 </body>
