@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 7;
+const RENDER_VERSION = 8;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -105,10 +105,9 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
       return `<div class="verse">\n${lines}\n    </div>`;
     })
     .join("\n      ");
-  const currentDay = date.getUTCDate();
   const dayLinks = Array.from({ length: 31 }, (_, i) => {
     const day = i + 1;
-    const cls = day === currentDay ? "current" : day === chapter ? "selected" : "";
+    const cls = day === chapter ? "current" : "";
     return `<a class="${cls}" href="/?day=${day}">${day}</a>`;
   }).join("");
 
@@ -147,7 +146,7 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .7rem; margin: .6rem 0 1.1rem; }
     .verse-links a { color: var(--muted); text-decoration: none; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
     .verse-links a:hover { color: var(--ink); text-decoration: underline; }
-    .verse-links a.current, .verse-links a.selected { color: var(--ink); font-weight: 700; }
+    .verse-links a.current { color: var(--ink); font-weight: 700; }
     .esv-link a { color: var(--ink); }
   </style>
 </head>
