@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 10;
+const RENDER_VERSION = 11;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -65,8 +65,8 @@ function renderWords(text: string, startIndex: number): { html: string; count: n
   const words = text.match(/\S+/g) ?? [];
   return {
     html: words
-      .map((word, i) => `<span class="w" data-w="${startIndex + i}">${renderText(word)}</span>`)
-      .join(" "),
+      .map((word, i) => `<span class="w" data-w="${startIndex + i}">${renderText(word)} </span>`)
+      .join(""),
     count: words.length,
   };
 }
@@ -151,6 +151,8 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     }
     .verse { break-inside: avoid; }
     .w.hl { background: #fce9a8; box-shadow: 0 .06em 0 .06em #fce9a8; border-radius: .12em; }
+    .w.hl + .w.hl { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .w.hl:has(+ .w.hl) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
     .verses p { margin: 0; }
     .verses p.indent { padding-left: 1.3em; }
     .verses .v { font-size: .7em; color: var(--muted); }
