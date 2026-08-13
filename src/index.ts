@@ -1,6 +1,6 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 3;
+const RENDER_VERSION = 4;
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -38,13 +38,18 @@ function parseVerses(passage: string): Verse[] {
   }
   if (current) verses.push(current);
 
-  return verses.length > 0
-    ? verses
-    : passage
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((text, i) => ({ number: i + 1, text }));
+  const result = verses.length > 0 ? verses : [];
+  if (result.length === 0) {
+    return passage
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((text, i) => ({ number: i + 1, text }));
+  }
+
+  const last = result[result.length - 1];
+  if (last) last.text = last.text.replace(/\s*\(ESV\)\s*$/, "").trim();
+  return result;
 }
 
 async function fetchChapter(chapter: number, env: AppEnv): Promise<{ text: string; copyright: string }> {
@@ -80,9 +85,12 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
   const formatted = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
   const versesHtml = verses.map((v) => `<p><sup>${v.number}</sup> ${v.text}</p>`).join("\n      ");
-  const verseLinks = verses
-    .map((v) => `<a href="https://www.esv.org/Proverbs+${chapter}:${v.number}/">${v.number}</a>`)
-    .join("");
+  const currentDay = date.getUTCDate();
+  const dayLinks = Array.from({ length: 31 }, (_, i) => {
+    const day = i + 1;
+    const current = day === currentDay;
+    return `<a class="${current ? "current" : ""}" href="/?day=${day}">${day}</a>`;
+  }).join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -113,9 +121,10 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     .verses sup { font-size: .7em; color: var(--muted); padding-right: .15em; }
     footer { margin-top: 2rem; color: var(--muted); font-size: .78rem; line-height: 1.5; text-align: center; }
     footer .copyright { font-style: italic; margin-top: .4rem; }
-    .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .1rem .65rem; margin: .5rem 0 1.1rem; }
-    .verse-links a { color: var(--muted); text-decoration: none; font-variant-numeric: tabular-nums; }
+    .verse-links { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem .7rem; margin: .6rem 0 1.1rem; }
+    .verse-links a { color: var(--muted); text-decoration: none; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
     .verse-links a:hover { color: var(--ink); text-decoration: underline; }
+    .verse-links a.current { color: var(--ink); font-weight: 700; }
     .esv-link a { color: var(--ink); }
   </style>
 </head>
@@ -132,8 +141,8 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     <hr class="rule">
     <footer>
       <div>Daily Proverbs — a chapter a day</div>
-      <nav class="verse-links" aria-label="Verses">
-        ${verseLinks}
+      <nav class="verse-links" aria-label="Days of the month">
+        ${dayLinks}
       </nav>
       <div class="copyright">${copyright || ESV_ATTRIBUTION}</div>
       <div class="esv-link">Read the <a href="https://www.esv.org/">ESV</a> at esv.org</div>
