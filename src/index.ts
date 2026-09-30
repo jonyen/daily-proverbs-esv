@@ -1,6 +1,8 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 12;
+const RENDER_VERSION = 13;
+const SITE_URL = "https://proverbs.jonyen.com";
+const SITE_NAME = "Daily Proverbs";
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -102,6 +104,9 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
 
   const title = `Proverbs ${chapter}`;
   const formatted = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const pageTitle = `${title} — ${SITE_NAME}`;
+  const description = `The ${title}, English Standard Version, for ${formatted}.`;
+  const pageUrl = chapter === date.getUTCDate() ? `${SITE_URL}/` : `${SITE_URL}/?day=${chapter}`;
 
   let wordIndex = 0;
   const versesHtml = verses
@@ -129,8 +134,21 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title} — Daily Proverbs</title>
-  <meta name="description" content="The ${title}, English Standard Version, for ${formatted}.">
+  <title>${pageTitle}</title>
+  <meta name="description" content="${description}">
+  <link rel="canonical" href="${pageUrl}">
+  <link rel="apple-touch-icon" href="${SITE_URL}/apple-touch-icon.png">
+  <meta property="og:title" content="${pageTitle}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${pageUrl}">
+  <meta property="og:site_name" content="${SITE_NAME}">
+  <meta property="og:image" content="${SITE_URL}/og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Daily Proverbs — a chapter a day. English Standard Version, proverbs.jonyen.com">
+  <meta name="twitter:card" content="summary_large_image">
   <style>
     :root { --ink: #2b2723; --paper: #faf7f0; --muted: #8a8378; --rule: #e3dccb; }
     * { box-sizing: border-box; }

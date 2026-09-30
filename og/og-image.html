@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Source for public/og.png (1200x630). Regenerate with: node og/render.mjs -->
+<style>
+  :root { --ink: #2b2723; --paper: #faf7f0; --muted: #8a8378; --rule: #e3dccb; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card { width: 960px; text-align: center; }
+  h1 { font-size: 104px; font-weight: 700; margin: 0; letter-spacing: .01em; line-height: 1.1; }
+  .tag { color: var(--muted); font-style: italic; font-size: 40px; margin-top: 18px; }
+  .rule { border: none; border-top: 2px solid var(--rule); margin: 44px 0; }
+  .days { font-size: 30px; color: var(--muted); font-variant-numeric: tabular-nums lining-nums; }
+  .days div { display: flex; justify-content: center; gap: 22px; margin: 8px 0; }
+  .meta { margin-top: 40px; font-size: 28px; color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 400; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Daily Proverbs</h1>
+    <div class="tag">a chapter a day</div>
+    <hr class="rule">
+    <div class="days" id="days"></div>
+    <div class="meta">English Standard Version · <b>proverbs.jonyen.com</b></div>
+  </div>
+  <script>
+    const row = (from, to) =>
+      `<div>${Array.from({ length: to - from + 1 }, (_, i) => `<span>${from + i}</span>`).join("")}</div>`;
+    document.getElementById("days").innerHTML = row(1, 16) + row(17, 31);
+  </script>
+</body>
+</html>
