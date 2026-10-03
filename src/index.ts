@@ -1,8 +1,19 @@
 const ESV_API_URL = "https://api.esv.org/v3/passage/text/";
 const CACHE_TTL_SECONDS = 12 * 60 * 60;
-const RENDER_VERSION = 13;
+const RENDER_VERSION = 14;
 const SITE_URL = "https://proverbs.jonyen.com";
 const SITE_NAME = "Daily Proverbs";
+// Anonymous, cookieless, aggregate visit counts via GoatCounter; no personal
+// data. Every page reports the one path "/", so a reader counts once per visit
+// whichever day they open. count.v5.js is pinned by SRI and never changes. If
+// this Worker ever sends a Content-Security-Policy, allow script-src
+// https://gc.zgo.at and connect-src and img-src
+// https://jonyen-daily-proverbs-esv.goatcounter.com.
+const GOATCOUNTER =
+  '<script data-goatcounter="https://jonyen-daily-proverbs-esv.goatcounter.com/count" ' +
+  "data-goatcounter-settings='{\"path\": \"/\"}' " +
+  'async src="https://gc.zgo.at/count.v5.js" crossorigin="anonymous" ' +
+  'integrity="sha384-atnOLvQb9t+jTSipvd75X2yginT4PjVbqDdlJAmxMm+wYElFmeR6EmLP5bYeoRVQ"></script>';
 const ESV_ATTRIBUTION =
   "The Holy Bible, English Standard Version® (ESV®), copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission. All rights reserved.";
 
@@ -196,6 +207,7 @@ function renderPage(chapter: number, date: Date, passage: string, copyright: str
     .verse-links a.current { color: var(--ink); font-weight: 700; }
     .esv-link a { color: var(--ink); }
   </style>
+  ${GOATCOUNTER}
 </head>
 <body>
   <main data-day="${chapter}">
